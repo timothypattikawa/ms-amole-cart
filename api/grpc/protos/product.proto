@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option go_package = "./product";
+
+message ProductResponse {
+  int64 TbapID  = 1;  
+	string TbapName = 2;   
+	int32 TbapPrice = 3;       
+	string TbapDescription = 4;
+}
+
+message ProductRequest {
+  int64 TbapID  = 1;  
+}
+
+
+message TakeStockForATCkRequest {
+  int64 id = 1;
+  int64 qtyStock = 2;
+}
+
+message TakeStockForATCResponse {
+  bool success_take_stock = 1;
+  int64 id = 2;
+  string product_name = 3;
+  int64 price = 4;
+}
+
+service ProductStock {
+  rpc TakeStockForATC(TakeStockForATCkRequest) returns (TakeStockForATCResponse);
+  rpc ProductInfo(ProductRequest) returns (ProductResponse);
+}

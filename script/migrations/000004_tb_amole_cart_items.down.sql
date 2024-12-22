@@ -1,0 +1,1 @@
+DROP TABLE tb_amole_cart_items;

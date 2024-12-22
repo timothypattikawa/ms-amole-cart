@@ -1,0 +1,18 @@
+service:
+  port: "9093"
+  port-grpc: "9090"
+database:
+  postgres:
+    user: "root"
+    password: "secret"
+    host: "localhost"
+    port: 5432
+    name: "amole_db"
+    min-conn: 10
+    max-conn: 100
+    max-life-time: 12s
+    keep-alive-interval: 20s
+security:
+  jwt:
+    secret: "acret123-812xliasfekaltasfesa231"
+    access-time: 1d
