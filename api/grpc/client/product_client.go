@@ -38,3 +38,15 @@ func (p *ProductgClientgRPC) GetProductInfo(ctx context.Context, productId int64
 
 	return resp, nil
 }
+
+func (p *ProductgClientgRPC) TakeStockForATC(ctx context.Context, in *pb.TakeStockForATCkRequest) (*pb.TakeStockForATCResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := p.client.TakeStockForATC(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/viper"
 	rpc "github.com/timothypattikawa/amole-services/cart-service/api/grpc/client"
+	pb "github.com/timothypattikawa/amole-services/cart-service/api/grpc/protos/product"
 	"github.com/timothypattikawa/amole-services/cart-service/internal/dto"
 	"github.com/timothypattikawa/amole-services/cart-service/internal/repository"
 	"github.com/timothypattikawa/amole-services/cart-service/internal/repository/postgres"
@@ -50,6 +51,8 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 			return dto.AddToCartResponse{}, exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
 		}
 	}
+
+	var response dto.AddToCartResponse
 
 	err = cs.cr.ExecTx(ctx, func(q *postgres.Queries) error {
 		var cartItems postgres.TbAmoleCartItem
@@ -98,7 +101,22 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 		}
 
 		// Hit product service for add to cart stock
-		
+		resRPC, err := cs.pgrpc.TakeStockForATC(ctx, &pb.TakeStockForATCkRequest{
+			Id:       int64(request.ProductId),
+			QtyStock: int64(request.Qty),
+		})
+
+		if err != nil {
+			log.Printf("fail to hit product for atc err{%v} data{%v}", err, request)
+			return exception.NewBusinessProcessError("out of stock!!", http.StatusBadRequest)
+		}
+
+		response = dto.AddToCartResponse{
+			SuccessTakeStock: true,
+			Id:               resRPC.Id,
+			ProductName:      resRPC.ProductName,
+			Price:            resRPC.Price,
+		}
 
 		return nil
 	})
@@ -107,7 +125,7 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 		return dto.AddToCartResponse{}, nil
 	}
 
-	return dto.AddToCartResponse{}, nil
+	return response, nil
 }
 
 func (cs CartServiceImpl) createNewCartForMember(ctx context.Context, memberId int32) (*postgres.TbAmoleCart, error) {

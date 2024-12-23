@@ -7,5 +7,8 @@ type AddToCartRequest struct {
 }
 
 type AddToCartResponse struct {
-	
+	SuccessTakeStock bool
+	Id               int64
+	ProductName      string
+	Price            int64
 }
