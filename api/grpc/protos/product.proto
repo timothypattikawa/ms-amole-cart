@@ -17,6 +17,7 @@ message ProductRequest {
 message TakeStockForATCkRequest {
   int64 id = 1;
   int64 qtyStock = 2;
+  int64 userCartStockQty = 3;
 }
 
 message TakeStockForATCResponse {

@@ -29,7 +29,7 @@ type DatabaseConfig struct {
 func (dbc *DatabaseConfig) createDatabaseUrl() string {
 
 	u := url.URL{
-		Host:   fmt.Sprintf("%s:%v", dbc.host, dbc.port),
+		Host:   fmt.Sprintf("%s:%d", dbc.host, dbc.port),
 		User:   url.UserPassword(dbc.user, dbc.password),
 		Scheme: "postgres",
 		Path:   dbc.schema,
@@ -46,7 +46,10 @@ func (dbc *DatabaseConfig) GetDatabaseConnPool() *pgxpool.Pool {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pgxConf, err := pgxpool.ParseConfig(dbc.createDatabaseUrl())
+	dbUrl := dbc.createDatabaseUrl()
+	log.Println(dbUrl)
+
+	pgxConf, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
 		log.Fatalf("fail to create url database err{%v}", err)
 	}

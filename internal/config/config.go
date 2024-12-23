@@ -32,9 +32,9 @@ func (c *Configuration) GetDatabseConfig(name string) *DatabaseConfig {
 	return &DatabaseConfig{
 		host:     c.v.GetString(fmt.Sprintf("database.%s.host", name)),
 		port:     c.v.GetInt(fmt.Sprintf("database.%s.port", name)),
-		user:     c.v.GetString(fmt.Sprintf("database.%s.usert", name)),
+		user:     c.v.GetString(fmt.Sprintf("database.%s.user", name)),
 		password: c.v.GetString(fmt.Sprintf("database.%s.password", name)),
-		schema:   c.v.GetString(fmt.Sprintf("database.%s.schema", name)),
+		schema:   c.v.GetString(fmt.Sprintf("database.%s.name", name)),
 		DatabasePoolConfig: DatabasePoolConfig{
 			maxCon:            c.v.GetInt(fmt.Sprintf("database.%s.max-conn", name)),
 			minCon:            c.v.GetInt(fmt.Sprintf("database.%s.min-conn", name)),

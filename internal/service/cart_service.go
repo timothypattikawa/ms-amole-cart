@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
@@ -42,9 +43,10 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 	var err error
 	activeCart, err = cs.cr.GetCartByMemberId(ctx, int32(request.UserId))
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			activeCart, err = cs.createNewCartForMember(ctx, int32(request.UserId))
 			if err != nil {
+				log.Printf("fail to create new cart for member err{%v}", err)
 				return dto.AddToCartResponse{}, exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
 			}
 		} else {
@@ -53,7 +55,6 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 	}
 
 	var response dto.AddToCartResponse
-
 	err = cs.cr.ExecTx(ctx, func(q *postgres.Queries) error {
 		var cartItems postgres.TbAmoleCartItem
 
@@ -69,7 +70,7 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 		})
 
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				cartItems, err = q.InsertCartItemsByCartId(ctx, postgres.InsertCartItemsByCartIdParams{
 					TaciCartID:    int32(activeCart.TacID),
 					TaciProductID: int32(request.ProductId),
@@ -100,10 +101,12 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 			return exception.NewBusinessProcessError("Something wen't wrong!", http.StatusInternalServerError)
 		}
 
+		log.Printf("cart items %v", cartItems)
 		// Hit product service for add to cart stock
 		resRPC, err := cs.pgrpc.TakeStockForATC(ctx, &pb.TakeStockForATCkRequest{
-			Id:       int64(request.ProductId),
-			QtyStock: int64(request.Qty),
+			Id:               int64(request.ProductId),
+			QtyStock:         int64(request.Qty),
+			UserCartStockQty: int64(cartItems.TaciQty),
 		})
 
 		if err != nil {
