@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ProductStock_TakeStockForATC_FullMethodName = "/ProductStock/TakeStockForATC"
 	ProductStock_ProductInfo_FullMethodName     = "/ProductStock/ProductInfo"
+	ProductStock_PutBackStock_FullMethodName    = "/ProductStock/PutBackStock"
 )
 
 // ProductStockClient is the client API for ProductStock service.
@@ -29,6 +30,7 @@ const (
 type ProductStockClient interface {
 	TakeStockForATC(ctx context.Context, in *TakeStockForATCkRequest, opts ...grpc.CallOption) (*TakeStockForATCResponse, error)
 	ProductInfo(ctx context.Context, in *ProductRequest, opts ...grpc.CallOption) (*ProductResponse, error)
+	PutBackStock(ctx context.Context, in *PutStockkRequest, opts ...grpc.CallOption) (*PutStockResponse, error)
 }
 
 type productStockClient struct {
@@ -59,12 +61,23 @@ func (c *productStockClient) ProductInfo(ctx context.Context, in *ProductRequest
 	return out, nil
 }
 
+func (c *productStockClient) PutBackStock(ctx context.Context, in *PutStockkRequest, opts ...grpc.CallOption) (*PutStockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PutStockResponse)
+	err := c.cc.Invoke(ctx, ProductStock_PutBackStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProductStockServer is the server API for ProductStock service.
 // All implementations must embed UnimplementedProductStockServer
 // for forward compatibility.
 type ProductStockServer interface {
 	TakeStockForATC(context.Context, *TakeStockForATCkRequest) (*TakeStockForATCResponse, error)
 	ProductInfo(context.Context, *ProductRequest) (*ProductResponse, error)
+	PutBackStock(context.Context, *PutStockkRequest) (*PutStockResponse, error)
 	mustEmbedUnimplementedProductStockServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedProductStockServer) TakeStockForATC(context.Context, *TakeSto
 }
 func (UnimplementedProductStockServer) ProductInfo(context.Context, *ProductRequest) (*ProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProductInfo not implemented")
+}
+func (UnimplementedProductStockServer) PutBackStock(context.Context, *PutStockkRequest) (*PutStockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PutBackStock not implemented")
 }
 func (UnimplementedProductStockServer) mustEmbedUnimplementedProductStockServer() {}
 func (UnimplementedProductStockServer) testEmbeddedByValue()                      {}
@@ -138,6 +154,24 @@ func _ProductStock_ProductInfo_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductStock_PutBackStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutStockkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductStockServer).PutBackStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductStock_PutBackStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductStockServer).PutBackStock(ctx, req.(*PutStockkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProductStock_ServiceDesc is the grpc.ServiceDesc for ProductStock service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var ProductStock_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProductInfo",
 			Handler:    _ProductStock_ProductInfo_Handler,
+		},
+		{
+			MethodName: "PutBackStock",
+			Handler:    _ProductStock_PutBackStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

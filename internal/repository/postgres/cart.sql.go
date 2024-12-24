@@ -101,19 +101,19 @@ func (q *Queries) GetCountCartActiveProduct(ctx context.Context, tacMemberID int
 const updateCart = `-- name: UpdateCart :exec
 UPDATE public.tb_amole_cart
 SET tac_member_id=$2, tac_total_price=$3,  tac_status=$4
-WHERE $1
+WHERE tac_id = $1
 `
 
 type UpdateCartParams struct {
-	Column1       interface{} `json:"column_1"`
-	TacMemberID   int32       `json:"tac_member_id"`
-	TacTotalPrice int32       `json:"tac_total_price"`
-	TacStatus     string      `json:"tac_status"`
+	TacID         int64  `json:"tac_id"`
+	TacMemberID   int32  `json:"tac_member_id"`
+	TacTotalPrice int32  `json:"tac_total_price"`
+	TacStatus     string `json:"tac_status"`
 }
 
 func (q *Queries) UpdateCart(ctx context.Context, arg UpdateCartParams) error {
 	_, err := q.db.Exec(ctx, updateCart,
-		arg.Column1,
+		arg.TacID,
 		arg.TacMemberID,
 		arg.TacTotalPrice,
 		arg.TacStatus,

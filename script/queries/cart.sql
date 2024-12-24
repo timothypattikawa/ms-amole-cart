@@ -5,7 +5,7 @@ VALUES($1, $2, $3) RETURNING *;
 -- name: UpdateCart :exec
 UPDATE public.tb_amole_cart
 SET tac_member_id=$2, tac_total_price=$3,  tac_status=$4
-WHERE $1;
+WHERE tac_id = $1;
 
 -- name: GetCartAndCartItemsByMemberIdAndActiveStatus :one
 SELECT tac_id, tac_member_id, tac_total_price tac_status, taci.*

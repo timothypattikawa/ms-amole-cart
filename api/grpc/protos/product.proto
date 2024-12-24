@@ -27,7 +27,17 @@ message TakeStockForATCResponse {
   int64 price = 4;
 }
 
+message PutStockkRequest {
+  int64 id = 1;
+  int64 qtyStock = 2;
+}
+
+message PutStockResponse {
+  bool success_take_stock = 1;
+}
+
 service ProductStock {
   rpc TakeStockForATC(TakeStockForATCkRequest) returns (TakeStockForATCResponse);
   rpc ProductInfo(ProductRequest) returns (ProductResponse);
+  rpc PutBackStock(PutStockkRequest) returns (PutStockResponse);
 }

@@ -9,6 +9,16 @@ import (
 	"context"
 )
 
+const deleteCartItemById = `-- name: DeleteCartItemById :exec
+DELETE FROM public.tb_amole_cart
+WHERE tac_id=$1
+`
+
+func (q *Queries) DeleteCartItemById(ctx context.Context, tacID int64) error {
+	_, err := q.db.Exec(ctx, deleteCartItemById, tacID)
+	return err
+}
+
 const getCarItemsByCartIdAmdProductid = `-- name: GetCarItemsByCartIdAmdProductid :one
 SELECT taci_id, taci_cart_id, taci_product_id, taci_qty, taci_price
 FROM public.tb_amole_cart_items WHERE taci_cart_id=$1 AND taci_product_id = $2
@@ -63,10 +73,10 @@ func (q *Queries) InsertCartItemsByCartId(ctx context.Context, arg InsertCartIte
 	return i, err
 }
 
-const updateCartItemByCartId = `-- name: UpdateCartItemByCartId :exec
+const updateCartItemByCartId = `-- name: UpdateCartItemByCartId :one
 UPDATE public.tb_amole_cart_items
 SET taci_product_id=$2, taci_qty=$3, taci_price=$4
-WHERE taci_id=$1
+WHERE taci_id=$1 RETURNING taci_id, taci_cart_id, taci_product_id, taci_qty, taci_price
 `
 
 type UpdateCartItemByCartIdParams struct {
@@ -76,12 +86,20 @@ type UpdateCartItemByCartIdParams struct {
 	TaciPrice     int32 `json:"taci_price"`
 }
 
-func (q *Queries) UpdateCartItemByCartId(ctx context.Context, arg UpdateCartItemByCartIdParams) error {
-	_, err := q.db.Exec(ctx, updateCartItemByCartId,
+func (q *Queries) UpdateCartItemByCartId(ctx context.Context, arg UpdateCartItemByCartIdParams) (TbAmoleCartItem, error) {
+	row := q.db.QueryRow(ctx, updateCartItemByCartId,
 		arg.TaciID,
 		arg.TaciProductID,
 		arg.TaciQty,
 		arg.TaciPrice,
 	)
-	return err
+	var i TbAmoleCartItem
+	err := row.Scan(
+		&i.TaciID,
+		&i.TaciCartID,
+		&i.TaciProductID,
+		&i.TaciQty,
+		&i.TaciPrice,
+	)
+	return i, err
 }

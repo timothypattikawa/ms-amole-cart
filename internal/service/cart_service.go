@@ -20,6 +20,7 @@ import (
 
 type CartService interface {
 	AddToCart(ctx context.Context, request dto.AddToCartRequest) (dto.AddToCartResponse, error)
+	DeleteItemInCart(ctx context.Context, request dto.DeleteCartRequest) error
 }
 
 type CartServiceImpl struct {
@@ -58,12 +59,14 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 	err = cs.cr.ExecTx(ctx, func(q *postgres.Queries) error {
 		var cartItems postgres.TbAmoleCartItem
 
+		// Get info for the product
 		productInfo, err := cs.pgrpc.GetProductInfo(ctx, int64(request.ProductId))
 		if err != nil {
 			log.Printf("err while hit product grpc err{%v}", err.Error())
 			return err
 		}
 
+		// Get cart item
 		cartItems, err = q.GetCarItemsByCartIdAmdProductid(ctx, postgres.GetCarItemsByCartIdAmdProductidParams{
 			TaciCartID:    int32(activeCart.TacID),
 			TaciProductID: int32(request.ProductId),
@@ -81,7 +84,25 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 					log.Printf("error while save cart item err{%v}", err)
 					return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
 				}
+				err = q.UpdateCart(ctx, postgres.UpdateCartParams{
+					TacID:         activeCart.TacID,
+					TacMemberID:   activeCart.TacMemberID,
+					TacTotalPrice: (activeCart.TacTotalPrice + cartItems.TaciPrice),
+					TacStatus:     activeCart.TacStatus,
+				})
+
+				if err != nil {
+					log.Printf("fail update cart price cause err{%v}", err)
+					return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+				}
 				log.Printf("sucessful for save cart items to cart %v", cartItems)
+
+				response = dto.AddToCartResponse{
+					SuccessTakeStock: true,
+					Id:               productInfo.TbapID,
+					ProductName:      productInfo.TbapName,
+					Price:            int64(productInfo.TbapPrice),
+				}
 				return nil
 			} else {
 				log.Printf("error while get cart item err{%v}", err)
@@ -89,7 +110,7 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 			}
 		}
 
-		err = q.UpdateCartItemByCartId(ctx, postgres.UpdateCartItemByCartIdParams{
+		cartItemUpdated, err := q.UpdateCartItemByCartId(ctx, postgres.UpdateCartItemByCartIdParams{
 			TaciID:        cartItems.TaciID,
 			TaciProductID: cartItems.TaciProductID,
 			TaciQty:       int32(request.Qty),
@@ -114,6 +135,19 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 			return exception.NewBusinessProcessError("out of stock!!", http.StatusBadRequest)
 		}
 
+		// Update cart service for new total price
+		err = q.UpdateCart(ctx, postgres.UpdateCartParams{
+			TacID:         activeCart.TacID,
+			TacMemberID:   activeCart.TacMemberID,
+			TacTotalPrice: (activeCart.TacTotalPrice - cartItems.TaciPrice) + cartItemUpdated.TaciPrice,
+			TacStatus:     activeCart.TacStatus,
+		})
+
+		if err != nil {
+			log.Printf("fail update cart price cause err{%v}", err)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
 		response = dto.AddToCartResponse{
 			SuccessTakeStock: true,
 			Id:               resRPC.Id,
@@ -125,7 +159,7 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 	})
 
 	if err != nil {
-		return dto.AddToCartResponse{}, nil
+		return dto.AddToCartResponse{}, err
 	}
 
 	return response, nil
@@ -143,4 +177,61 @@ func (cs CartServiceImpl) createNewCartForMember(ctx context.Context, memberId i
 	}
 
 	return newCart, err
+}
+
+func (cs CartServiceImpl) DeleteItemInCart(ctx context.Context, request dto.DeleteCartRequest) error {
+	err := cs.cr.ExecTx(ctx, func(q *postgres.Queries) error {
+		activeCart, err := q.GetCartByMemberId(ctx, int32(request.UserId))
+		if err != nil {
+			log.Printf("user %v doesn't have active cart", request.UserId)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		cartItems, err := q.GetCarItemsByCartIdAmdProductid(ctx, postgres.GetCarItemsByCartIdAmdProductidParams{
+			TaciCartID:    int32(activeCart.TacID),
+			TaciProductID: int32(request.ProductId),
+		})
+
+		if err != nil {
+			log.Printf("there is not product %v in cart %v", request.ProductId, activeCart.TacID)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		err = q.DeleteCartItemById(ctx, cartItems.TaciID)
+		if err != nil {
+			log.Printf("fail to delete %v in cart %v", request.ProductId, activeCart.TacID)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		err = q.UpdateCart(ctx, postgres.UpdateCartParams{
+			TacID:         activeCart.TacID,
+			TacMemberID:   activeCart.TacMemberID,
+			TacTotalPrice: activeCart.TacTotalPrice - cartItems.TaciPrice,
+			TacStatus:     activeCart.TacStatus,
+		})
+
+		if err != nil {
+			log.Printf("fail update cart price cause err{%v}", err)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		respRPC, err := cs.pgrpc.PutBackStock(ctx, &pb.PutStockkRequest{
+			Id:       cartItems.TaciID,
+			QtyStock: int64(cartItems.TaciQty),
+		})
+
+		if err != nil {
+			log.Printf("fail update stock product with GRPC cause err{%v}", err)
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		if !respRPC.SuccessTakeStock {
+			log.Println("false status from put back stock, please check product service")
+			return exception.NewBusinessProcessError("Somtehing wen't wrong!", http.StatusInternalServerError)
+		}
+
+		return nil
+	})
+
+	return err
 }

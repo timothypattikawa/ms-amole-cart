@@ -50,3 +50,15 @@ func (p *ProductgClientgRPC) TakeStockForATC(ctx context.Context, in *pb.TakeSto
 
 	return resp, nil
 }
+
+func (p *ProductgClientgRPC) PutBackStock(ctx context.Context, in *pb.PutStockkRequest) (*pb.PutStockResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := p.client.PutBackStock(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
