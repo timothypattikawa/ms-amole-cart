@@ -40,10 +40,16 @@ func (cr CartRepositoryImpl) ExecTx(ctx context.Context, fn func(q *sqlc.Queries
 	err = fn(q)
 
 	if err != nil {
-		tx.Rollback(ctx)
+		if err := tx.Rollback(ctx); err != nil {
+			log.Printf("error rollback database err{%v}", err)
+			return err
+		}
 	}
 
-	tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("error commit database err{%v}", err)
+		return err
+	}
 	return nil
 }
 

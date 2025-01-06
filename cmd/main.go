@@ -10,6 +10,7 @@ import (
 	"github.com/timothypattikawa/amole-services/cart-service/internal/repository"
 	"github.com/timothypattikawa/amole-services/cart-service/internal/service"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	v := config.LoadViper()
 	conf := config.NewConfig(v)
 
-	conn, err := grpc.Dial("localhost:1200", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.NewClient("localhost:1200", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}

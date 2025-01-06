@@ -1,3 +1,5 @@
+postgres:
+	docker run -d --name postgres-amole -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -v ~/docker/postgres-amole:/var/lib/postgresql/data -p 5432:5432 postgres:17-alpine
 createdb:
 	docker exec -it postgres-amole createdb --username=root --owner=root amole_db
 dropdb:

@@ -103,6 +103,19 @@ func (cs CartServiceImpl) AddToCart(ctx context.Context, request dto.AddToCartRe
 					ProductName:      productInfo.TbapName,
 					Price:            int64(productInfo.TbapPrice),
 				}
+
+				// Hit product service for add to cart stock
+				_, err := cs.pgrpc.TakeStockForATC(ctx, &pb.TakeStockForATCkRequest{
+					Id:               int64(request.ProductId),
+					QtyStock:         int64(request.Qty),
+					UserCartStockQty: int64(cartItems.TaciQty),
+				})
+
+				if err != nil {
+					log.Printf("fail to hit product for atc err{%v} data{%v}", err, request)
+					return exception.NewBusinessProcessError("out of stock!!", http.StatusBadRequest)
+				}
+
 				return nil
 			} else {
 				log.Printf("error while get cart item err{%v}", err)
