@@ -23,3 +23,5 @@ I'm using docker for the database
 ## Image for example redis stock
 ![alt text](image-1.png)
 
+## Reason why using this pattern
+This pattern divides the program according to the existing parts, for example, the api will contain how we connect with other services, cmd is the main focus of the program, internal is a folder that contains folders from the core programm regarding, service how the application logic, repository how the application relates to the database, handler how the application can be hit from other applications, config how to configure the application. etc. for the script folder itself is a folder that contains scripts that are needed to generate databases and queries because I use sqlc.
