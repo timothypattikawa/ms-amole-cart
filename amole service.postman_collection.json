@@ -1,0 +1,107 @@
+{
+	"info": {
+		"_postman_id": "1b3653f6-04fb-4cda-9ea6-6d838848bbdb",
+		"name": "amole service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "10990203"
+	},
+	"item": [
+		{
+			"name": "Member Service",
+			"item": [
+				{
+					"name": "member info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "localhost:9091/v1/member/info/1"
+					},
+					"response": []
+				},
+				{
+					"name": "Registration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\" : \"Timotius\",\n    \"email\" : \"timotiuspattikawa@gmail.com\",\n    \"password\" : \"labalaba0208\",\n    \"address\" : \"jln. selokan mataram\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:9091/v1/member/create"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\" : \"timotiuspattikawa@gmail.com\",\n    \"password\" : \"secret\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:9091/v1/member/login"
+					},
+					"response": []
+				}
+			],
+			"description": "All api for member service"
+		},
+		{
+			"name": "product service",
+			"item": [
+				{
+					"name": "Get All Product",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "localhost:9092/v1/products"
+					},
+					"response": []
+				},
+				{
+					"name": "get product",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "localhost:9092/v1/product/1"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cart Service",
+			"item": [
+				{
+					"name": "Add to cart",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\" : 1,\n\t\"product_id\" : 4,\n\t\"qty\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:9093/v1/add-to-cart"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
